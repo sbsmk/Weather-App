@@ -6,9 +6,11 @@ const temperature = document.querySelector("#temperature");
 const weatherCondition = document.querySelector("#weatherCondition");
 const humidity = document.querySelector("#humidity");
 const windSpeed = document.querySelector("#windSpeed");
+const loader = document.querySelector("#loader");
 
 let currentTempCelsius = 0;
 let isCelsius = true;
+let isLoading = false;
 
 function setupEventListeners() {
   searchBtn.addEventListener("click", () => {
@@ -25,8 +27,9 @@ function setupEventListeners() {
 
 setupEventListeners();
 
-const fetchWeather = async function fetchWeather(city) {
+async function fetchWeather(city) {
   const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${weatherApi}&units=metric`;
+  setLoading(true);
 
   try {
     const response = await fetch(url);
@@ -40,10 +43,12 @@ const fetchWeather = async function fetchWeather(city) {
     console.log("Fetch Temp in Celsius", data.main.temp);
   } catch (error) {
     alert(error.message);
+  } finally {
+    setLoading(false);
   }
-};
+}
 
-const updateUI = async function updateUI(data) {
+async function updateUI(data) {
   document.getElementById("weatherDisplay").style.display = "block ";
   document.getElementById("toggleTemp").style.display = "block";
 
@@ -60,13 +65,9 @@ const updateUI = async function updateUI(data) {
 
   document.getElementById(
     "weatherCondition"
-  ).textContent = `Condition: ${data.weather[0].description}`;
-  document.getElementById(
-    "humidity"
-  ).textContent = `Humidity: ${data.main.humidity}`;
-  document.getElementById(
-    "windSpeed"
-  ).textContent = `Wind Speed: ${data.wind.speed} km/h`;
+  ).textContent = `${data.weather[0].description}`;
+  document.getElementById("humidity").textContent = `${data.main.humidity}`;
+  document.getElementById("windSpeed").textContent = `${data.wind.speed} km/h`;
 
   document.getElementById(
     "weatherIcon"
@@ -75,7 +76,7 @@ const updateUI = async function updateUI(data) {
   document.getElementById("weatherIcon").style.display = "block";
 
   reattachToggleListener();
-};
+}
 
 function reattachToggleListener() {
   const toggleTemp = document.getElementById("toggleTemp");
@@ -84,20 +85,31 @@ function reattachToggleListener() {
 }
 
 function toggleTemperature() {
+  const toggleInput = document.getElementById("toggleTemp");
+  const tempValue = document.getElementById("tempValue");
   const tempUnitElement = document.getElementById("tempUnit");
-  console.log("tempUnitElement inside click event:", tempUnitElement);
+
+  isCelsius = !isCelsius;
 
   if (isCelsius) {
+    tempValue.textContent = currentTempCelsius.toFixed(1);
+    tempUnitElement.textContent = "C";
+  } else {
     const tempFahrenheit = (currentTempCelsius * 9) / 5 + 32;
     tempValue.textContent = tempFahrenheit.toFixed(1);
     tempUnitElement.textContent = "F";
-    toggleTemp.textContent = "Switch to C";
-  } else {
-    tempValue.textContent = currentTempCelsius.toFixed(1);
-    tempUnitElement.textContent = "C";
-    toggleTemp.textContent = "Switch to F";
+  }
+}
+
+function setLoading(isLoading) {
+  isLoading = isLoading;
+
+  if (loader) {
+    loader.style.display = isLoading ? "block" : "none";
   }
 
-  isCelsius = !isCelsius;
-  console.log(isCelsius);
+  searchBtn.disabled = isLoading;
+  cityInput.disabled = isLoading;
+
+  searchBtn.textContent = isLoading ? "Loading..." : "Check";
 }
